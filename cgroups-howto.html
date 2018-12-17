@@ -1,0 +1,71 @@
+<HTML>
+    <HEAD> HOW TO CGROUPS </HEAD>
+    <BODY>
+        <PRE>
+My Experiments with Linux CGroups:
+
+Experiment #1: - Can i limit disk usage of an app using CGroups.
+// Simple answer - NO - cgroups support blkio - but it does only rate of io etc...
+// I guess the reason is one can always use quota to enforce this..
+
+//In my case, the disk is actually a ram disk... so it is possible to mount the ramdisk
+//and put the limit on total memory utilization. 
+
+Steps (tried on ubuntu 18.04):
+
+1. Create a memory CGROUP (named myCG):
+   $ sudo cgcreate -g memory:/myCG
+
+2. Set the usage limit (say 10MB):
+   In this case i set the limit on the 'memory.limit_in_bytes' - i couldn't get 'cgset' to work - so i did this:
+   $ sudo bash
+   # echo "10000000" > /sys/fs/cgroup/memory/myCG/memory.limit_in_bytes
+
+3. Verify the limit - two ways - either cgget or cat..
+   $ cat /sys/fs/cgroup/memory/myCG/memory.limit_in_bytes
+   9994240
+
+   OR
+
+   $ cgget -g memory:/myCG | grep memory.limit_in_bytes
+   memory.limit_in_bytes: 9994240
+
+4. Create a shell - to be added to the Cgroups:
+   $ zsh
+   % echo $$
+   4024
+
+5. From Another window - add this process to CGroups - two ways (either using cgclassify or echo):
+   $ sudo cgclassify -g memory:/myCG 4024
+
+   or
+
+   $ sudo bash
+   # echo "4024" >> /sys/fs/cgroup/memory/myCG/cgroup.procs
+
+6. Check the current usage:
+   $ cgget -g memory:/myCG | grep memory.usage_in_bytes
+   memory.usage_in_bytes: 3715072
+
+
+6. Create a ram disk from zsh (which is now limited by CGroups)
+   % sudo mount -t tmpfs -o size=4m tmpfs /mnt/ramdisk
+   %
+
+7. Put a large file on /mnt/ramdisk:
+   % % ls -l /bin/bash
+   -rwxr-xr-x 1 root root 1113504 Apr  4  2018 /bin/bash
+   % cp /bin/bash /mnt/ramdisk
+   %
+
+8. Check the usage:
+   $ cgget -g memory:/myCG | grep memory.usage_in_bytes
+   memory.usage_in_bytes: 4878336
+
+9. Remove the file and the check the usage:
+   $ cgget -g memory:/myCG | grep memory.usage_in_bytes
+   memory.usage_in_bytes: 3874816
+
+        </PRE>
+    </BODY>
+</HTML>
