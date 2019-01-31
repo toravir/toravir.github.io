@@ -94,7 +94,7 @@ Complete Logs of dynamic mapping including search:
 
 1. Create the index with dynamic template
 </PRE><PRE class="code">
-$ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 --key /securedata/hostcerts/elastic/admin/server8.key -d '
+$ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -d '
 {
     "settings": {
         "index": {
@@ -124,7 +124,7 @@ $ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -
 </PRE></PRE>
 2. Check the index settings
 </PRE><PRE class="code">
-$ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt 'http://localhost:9200/test123/'
+$ curl -X GET 'http://localhost:9200/test123/'
 {                                                                                              
     "test123": {                                                                               
         "aliases": {                                                                           
@@ -288,7 +288,7 @@ $
 </PRE></PRE>
 $ ## If you try to search on a non-indexed field - you get an error:                                      
 </PRE><PRE class="code">
-$ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt --cert /securedata/clientcerts/elastic/admin/server.crt --key /securedata/clientcerts/elastic/admin/server.key 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.name_noindex":"Jack Russell"}}}'
+$ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.name_noindex":"Jack Russell"}}}'
 
 {
     "error": {                                                                                                                                                 
