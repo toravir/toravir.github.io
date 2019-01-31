@@ -101,7 +101,7 @@ $ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -
 }
 ' 
 
-{"acknowledged":true,"shards_acknowledged":true,"index":"test123"}$
+{"acknowledged":true,"shards_acknowledged":true,"index":"test123"}
 
 2. Check the index settings
 $ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt 'http://localhost:9200/test123/'
@@ -205,6 +205,86 @@ $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: applicat
         ]
     }
 }
+
+$$
+$$
+$ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -d '{"settings":{"index":{"number_of_shards":1, "number_of_replicas":0}}, "mappings":{ "rslt" : { "dynamic_templates" : [ {"id_strings" : {"match" : "*_id", "match_mapping_type":"string", "mapping":{"type":"keyword"}}}, {"non_searchable" : {"match": "*_noindex", "mapping":{"index": false}}} ] } } }'                                                                      
+
+{"acknowledged":true,"shards_acknowledged":true,"index":"test123"}$                                                                        
+$                                                                                                                                          
+$                                                                                                                                          
+$ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{"record":{"name_noindex":"Jack Russell", "animal_id": "a1000-100"}}'
+...
+$ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{"record" : {"name_noindex":"Jack Buddy", "animal_id": "a1000-2002"}}'
+...
+$
+$ curl -X GET 'http://localhost:9200/test123/'                                                                                
+{                                                                                                                                                              
+    "test123": {                                                                                                                                               
+        "aliases": {                                                                                                                                           
+
+        },
+        "mappings": {
+            "rslt": {
+                "dynamic_templates": [
+                    {                 
+                        "id_strings": {
+                            "match": "*_id",
+                            "match_mapping_type": "string",
+                            "mapping": {                   
+                                "type": "keyword"          
+                            }                              
+                        }                                  
+                    },                                     
+                    {                                      
+                        "non_searchable": {                
+                            "match": "*_noindex",          
+                            "mapping": {                   
+                                "index": false             
+                            }                              
+                        }                                  
+                    }                                      
+                ],                                         
+                "properties": {                            
+                    "record": {                            
+                        "properties": {                    
+                            "animal_id": {                 
+                                "type": "keyword"          
+                            },                             
+                            "name_noindex": {              
+                                "type": "text",            
+                                "index": false             
+                            }                              
+                        }                                  
+                    }                                      
+....
+....
+                                                       
+$                                      
+$ ## If you try to search on a non-indexed field - you get an error:                                      
+$ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt --cert /securedata/clientcerts/elastic/admin/server.crt --key /securedata/clientcerts/elastic/admin/server.key 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.name_noindex":"Jack Russell"}}}'
+
+{
+    "error": {                                                                                                                                                 
+        "root_cause": [                                                                                                                                        
+            {                                                                                                                                                  
+                "type": "query_shard_exception",                                                                                                               
+                "reason": "failed to create query: {\n  \"match\" : {\n    \"record.name_noindex\" : {\n      \"query\" : \"Jack Russell\",\n      \"operator\" : \"OR\",\n      \"prefix_length\" : 0,\n      \"max_expansions\" : 50,\n      \"fuzzy_transpositions\" : true,\n      \"lenient\" : false,\n      \"zero_terms_query\" : \"NONE\",\n      \"auto_generate_synonyms_phrase_query\" : true,\n      \"boost\" : 1.0\n    }\n  }\n}",
+...
+...
+                    "index": "test123",
+                    "caused_by": {
+                        "type": "illegal_argument_exception",
+                        "reason": "Cannot search on field [record.name_noindex] since it is not indexed."
+                    }
+...
+...
+$
+$
+$## We can still query on other 'indexed' fields.
+$ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"a1000-100"}}}'
+
+{"took":1,"timed_out":false,"_shards":{"total":1,"successful":1,"skipped":0,"failed":0},"hits":{"total":1,"max_score":0.6931472,"hits":[{"_index":"test123","_type":"rslt","_id":"NpOGpWgBPx90WKtWdu2P","_score":0.6931472,"_source":{ "record" : {"name_noindex":"Jack Russell", "animal_id": "a1000-100"}}}]}}
 
         </PRE>
     </BODY>
