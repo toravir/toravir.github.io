@@ -1,5 +1,22 @@
 <HTML>
-    <HEAD><TITLE>Elasticsearch Dynamic Mapping</TITLE></HEAD>
+    <HEAD><TITLE>Elasticsearch Dynamic Mapping</TITLE>
+    <STYLE>
+
+pre.code {
+    display: block;
+    padding: 9.5px;
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.42857;
+    word-break: break-all;
+    word-wrap: break-word;
+    color: #333333;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px
+}
+    </STYLE>
+    </HEAD>
     <BODY>
         <PRE>
 Here are some of my experiments with Elasticsearch's dynamic templates.
@@ -10,11 +27,12 @@ for documents added to the index. So as documents gets added, ES automatically u
 the keys and their types.
    With dynamic mapping, text fields like:
    {"animal_id": "1000-2002"} - gets automatically mapped
-
+</PRE>
+<PRE class="code">
 	"animal_id": {
 	    "type": "text",
-
-
+</PRE>
+<PRE>
    The problem with "type" : "text" is that exact search does NOT work - so if you search for {"animal_id":"1000"} 
 - ES will return documents containing "1000-2002", "1000-1001", "1000-xxxx". The reason is when you add the document
 ES analyzes the entire string and stores parts (words) individually and when searching it sees a 'word' is present
@@ -40,6 +58,7 @@ Dynamic Templates:
    Dynamic templates are per index - and aids ES on assigning mapping for new fields.
 
    For this purpose, the dynamic template specified when creating the index:
+</PRE><PRE class="code">
 {
     "settings": {
         "index": {
@@ -62,8 +81,8 @@ Dynamic Templates:
             ]
         }
     }
-}
-
+} </PRE>
+<PRE>
 Explanation: 
     for 'rslt' type of documents added to my index, look for :
 	1. field name matches with "*_id"   AND
@@ -74,7 +93,7 @@ Explanation:
 Complete Logs of dynamic mapping including search:
 
 1. Create the index with dynamic template
-
+</PRE><PRE class="code">
 $ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 --key /securedata/hostcerts/elastic/admin/server8.key -d '
 {
     "settings": {
@@ -102,8 +121,9 @@ $ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -
 ' 
 
 {"acknowledged":true,"shards_acknowledged":true,"index":"test123"}
-
+</PRE></PRE>
 2. Check the index settings
+</PRE><PRE class="code">
 $ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt 'http://localhost:9200/test123/'
 {                                                                                              
     "test123": {                                                                               
@@ -127,15 +147,17 @@ $ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt 'http://
         },
         "settings": {
 ...
-
+</PRE></PRE>
 3. Add two documents
-
+</PRE><PRE class="code">
 $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{ "record" : {"name":"Jack Russell", "animal_id": "a1000-100"}}'
 ...
 $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{"record" : {"name":"Jack Buddy", "animal_id": "a1000-2002"}}'
 ...
 
+</PRE></PRE>
 4. Check index mapping (dynamically detected mapping):
+</PRE><PRE class="code">
 {                                                                                              
     "test123": {                                                                               
         "aliases": {                                                                           
@@ -167,9 +189,9 @@ $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/
             }
         },
         "settings": {
-
+</PRE></PRE>
 5. Do search queries
-
+</PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"100"}}}'
 {
 ...
@@ -206,8 +228,10 @@ $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: applicat
     }
 }
 
+</PRE></PRE>
 $$
 $$
+</PRE><PRE class="code">
 $ curl -H "Content-Type: application/json" -XPUT http://localhost:9200/test123 -d '{"settings":{"index":{"number_of_shards":1, "number_of_replicas":0}}, "mappings":{ "rslt" : { "dynamic_templates" : [ {"id_strings" : {"match" : "*_id", "match_mapping_type":"string", "mapping":{"type":"keyword"}}}, {"non_searchable" : {"match": "*_noindex", "mapping":{"index": false}}} ] } } }'                                                                      
 
 {"acknowledged":true,"shards_acknowledged":true,"index":"test123"}$                                                                        
@@ -261,7 +285,9 @@ $ curl -X GET 'http://localhost:9200/test123/'
 ....
                                                        
 $                                      
+</PRE></PRE>
 $ ## If you try to search on a non-indexed field - you get an error:                                      
+</PRE><PRE class="code">
 $ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt --cert /securedata/clientcerts/elastic/admin/server.crt --key /securedata/clientcerts/elastic/admin/server.key 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.name_noindex":"Jack Russell"}}}'
 
 {
@@ -281,7 +307,9 @@ $ curl -X GET --cacert /securedata/clientcerts/elastic/admin/cacert.crt --cert /
 ...
 $
 $
+</PRE></PRE>
 $## We can still query on other 'indexed' fields.
+</PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"a1000-100"}}}'
 
 {"took":1,"timed_out":false,"_shards":{"total":1,"successful":1,"skipped":0,"failed":0},"hits":{"total":1,"max_score":0.6931472,"hits":[{"_index":"test123","_type":"rslt","_id":"NpOGpWgBPx90WKtWdu2P","_score":0.6931472,"_source":{ "record" : {"name_noindex":"Jack Russell", "animal_id": "a1000-100"}}}]}}

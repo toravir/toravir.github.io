@@ -2,14 +2,19 @@
     <HEAD><TITLE>ES Problem with auto detection</TITLE></HEAD>
     <BODY>
         <PRE>
+Elasticsearch's auto detect mapping may not align with how you query.. Here's one such problem:
+
 #1: Create the index without mapping (default is dynamic mapping)
+</PRE><PRE class="code">
 
 $ curl -XPUT http://localhost:9200/test123 
 {"acknowledged":true,"shards_acknowledged":true,"index":"test123"}
 $
 
+</PRE></PRE>
 
 #2: Get the settings
+</PRE><PRE class="code">
 
 $ curl -X GET http://localhost:9200/test123
 {
@@ -37,10 +42,12 @@ $ curl -X GET http://localhost:9200/test123
         }
     }
 }
+</PRE></PRE>
 
 $ ## No mappings are available - since no documents are added..
 
 #3. Add two documents and let ES automatically create a mapping
+</PRE><PRE class="code">
 $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{ "record" : {"name":"Jack Russell", "animal_id": "a1000-100"}}'
 {...}
 $
@@ -48,7 +55,9 @@ $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/
 {...}
 $
 
+</PRE></PRE>
 #4. Check the index settings to see the auto detected mapping
+</PRE><PRE class="code">
 ...
         "mappings": {
             "rslt": {
@@ -81,10 +90,12 @@ $
         "settings": {
 ...
 
+</PRE></PRE>
 $ ## Auto detected both 'animal_id' and 'name' fields as "type": "text" - this text has fields of keywords.
 $ ## Instead we want the entire field as keyword.
 
 $ ## Lets do a simple Query
+</PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"a1000"}}}'
 {                                                                                                                                                              
     "took": 3,                                                                                                                                                 
@@ -146,10 +157,12 @@ $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: applicat
     }
 }
 
+</PRE></PRE>
 $ ## Second example clearly indicates that it is NOT doing substring (or prefix) match - it is looking for
   Docs containing 'a10' word. the two documents have words 'a1000', '2002', '100'
   ## Following query confirms it.
 
+</PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"100"}}}'
 {
     "took": 3,
