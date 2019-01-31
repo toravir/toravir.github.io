@@ -147,7 +147,7 @@ $ curl -X GET 'http://localhost:9200/test123/'
         },
         "settings": {
 ...
-</PRE></PRE>
+</PRE><PRE>
 3. Add two documents
 </PRE><PRE class="code">
 $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{ "record" : {"name":"Jack Russell", "animal_id": "a1000-100"}}'
@@ -155,7 +155,7 @@ $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/
 $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/rslt -d '{"record" : {"name":"Jack Buddy", "animal_id": "a1000-2002"}}'
 ...
 
-</PRE></PRE>
+</PRE><PRE>
 4. Check index mapping (dynamically detected mapping):
 </PRE><PRE class="code">
 {                                                                                              
@@ -189,7 +189,7 @@ $ curl -H "Content-Type: application/json" -XPOST http://localhost:9200/test123/
             }
         },
         "settings": {
-</PRE></PRE>
+</PRE><PRE>
 5. Do search queries
 </PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"100"}}}'
@@ -228,7 +228,7 @@ $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: applicat
     }
 }
 
-</PRE></PRE>
+</PRE><PRE>
 $$
 $$
 </PRE><PRE class="code">
@@ -285,7 +285,7 @@ $ curl -X GET 'http://localhost:9200/test123/'
 ....
                                                        
 $                                      
-</PRE></PRE>
+</PRE><PRE>
 $ ## If you try to search on a non-indexed field - you get an error:                                      
 </PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.name_noindex":"Jack Russell"}}}'
@@ -307,7 +307,7 @@ $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: applicat
 ...
 $
 $
-</PRE></PRE>
+</PRE><PRE>
 $## We can still query on other 'indexed' fields.
 </PRE><PRE class="code">
 $ curl -X GET 'http://localhost:9200/test123/_search' -H 'Content-Type: application/json' -d '{"query":{"match":{"record.animal_id":"a1000-100"}}}'
