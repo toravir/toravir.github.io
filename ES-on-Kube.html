@@ -1,0 +1,80 @@
+<HTML>
+    <HEAD><TITLE>Learnings while bringing up ES cluster on Kube Cluster</TITLE>
+    <STYLE>
+
+pre.code {
+    display: block;
+    padding: 9.5px;
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.42857;
+    word-break: break-all;
+    word-wrap: break-word;
+    color: #333333;
+    background-color: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 4px
+}
+    </STYLE>
+</HEAD>
+    <BODY>
+<PRE>
+    Step #1: Bring up Kube Cluster
+        Note: There are quirks that need to be due to Vagrant
+        #1 - in /etc/hosts - change the 127.0.0.1 mapping to <nodename> to IP (routable) to </nodename>
+        Example I had:
+            127.0.0.1      node1
+        Changed to
+            15.0.0.11      node1
+
+    Depending on which networking plugin you choose to use (Calico or flannel - two i tried) - each requires a
+    specific POD-CIDR network.
+    For flannel kubeadm init needs "--pod-network-cidr 10.244.0.0/16"
+    For calico kubeadm init needs "--pod-network-cidr 192.168.0.0/16"
+
+    Not sure if flannel needs this or not - calico needs to be used along with canal (policy based networking plugin).
+
+    After all these steps - check whether the cluster is in good shape by doing these cmds:
+
+</PRE><PRE class="code">
+    root@node2:/vagrant# kubectl get pod -n kube-system
+    calico-etcd-852hb                          1/1     Running            0          5h40m
+calico-kube-controllers-75f6766678-fckvq   1/1     Running            0          5h40m
+calico-node-pb5h5                          1/2     Running            69         5h39m
+canal-9ndtt                                2/2     Running            0          5h40m
+canal-qrqbt                                2/2     Running            0          5h21m
+canal-z5fdr                                2/2     Running            0          5h40m
+coredns-fb8b8dccf-4zdgd                    1/1     Running            0          5h40m
+coredns-fb8b8dccf-7hjrd                    1/1     Running            0          5h40m
+etcd-node2                                 1/1     Running            0          5h39m
+kube-apiserver-node2                       1/1     Running            0          5h39m
+kube-controller-manager-node2              1/1     Running            0          5h39m
+kube-proxy-6ptxk                           1/1     Running            0          5h21m
+kube-proxy-n7wqb                           1/1     Running            0          5h40m
+kube-proxy-nhtdd                           1/1     Running            0          5h40m
+kube-scheduler-node2                       1/1     Running            0          5h39m
+    </PRE><PRE>
+    Main things to note is coredns and kube-proxy is running well. If it is not running you ca
+    do 'kubectl desc pod/.... -n kube-system' to see why it is not running.
+
+    You may need to check the state of kubelet to see if it is healthy - doing:
+    "journalctl -u kubelet"
+
+    I am not sure regular working also prints a lot of errors - one of the errors i had seen was
+    "Unable to update cni config: No networks found in /etc/cni/net.d" - it went away after installing
+    canal - not sure if it is the right fix or not..
+
+
+Step #2: Running ES
+Two important yamls:
+    1. service
+    2. master
+
+    Service is used by master to discover other master pods. This service is NOT used
+    as a entrypoint to these pods - so these are Headless Service
+    (more: </PRE><A HREF=https://www.quora.com/What-is-the-use-of-a-headless-service-in-Kubernetes">https://www.quora.com/What-is-the-use-of-a-headless-service-in-Kubernetes</A><PRE>)
+
+
+
+    </BODY>
+</HTML>
