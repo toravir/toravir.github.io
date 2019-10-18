@@ -1,0 +1,78 @@
+<HTML>
+    <HEAD> <TITLE> HOW TO MQTT </TITLE>
+        <STYLE>
+            pre.code {
+                display: block;
+                padding: 9.5px;
+                margin: 0 0 10px;
+                font-size: 13px;
+                line-height: 1.42857;
+                word-break: break-all;
+                word-wrap: break-word;
+                color: #333333;
+                background-color: #f5f5f5;
+                border: 1px solid #ccc;
+                border-radius: 4px
+            }
+        </STYLE>
+    </HEAD>
+    <BODY>
+        <PRE>
+
+My Experiments with MQTT
+
+1. Run MQTT Broker
+   $ docker run -d -p 1883:1883 --name mqtt eclipse-mosquitto  // open port 9001 if websocket are needed
+
+2. Install Paho-MQTT Python library
+   $ pip install paho-mqtt
+
+3. Write a simple subcriber using paho-mqtt apis
+
+</PRE>
+<PRE class="code">
+import paho.mqtt.client as mqtt
+
+def on_connect(client, userdata, flags, rc):
+    client.subscribe("epdnld/+")
+
+def on_message(client, userdata, msg):
+    print(msg.topic+" "+str(msg.payload))
+
+client = mqtt.Client()
+client.on_connect = on_connect
+client.on_message = on_message
+
+client.connect("mont.cisco.com", 1883, 60)
+client.loop_forever()
+</PRE>
+<PRE>
+
+
+4. Write a simple publisher
+
+</PRE>
+<PRE class="code">
+import paho.mqtt.client as mqtt
+
+client = mqtt.Client()
+client.connect("mont.cisco.com", 1883, 60)
+client.publish("epdnld/vppn", 'hello world')
+</PRE>
+<PRE>
+
+5. Run the sub in a window and run pub in another window
+
+</PRE>
+<PRE class="code">
+root@e4c9b3c7c7e5:/# python sub.py 
+epdnld/vppn hello world
+
+
+root@e4c9b3c7c7e5:/# python pub.py 
+</PRE>
+<PRE>
+
+        </PRE>
+    </BODY>
+</HTML>
